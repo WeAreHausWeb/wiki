@@ -18,3 +18,13 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
   rsync -a hausXX@srv01:public_html/ ~/Sites/xxx.se
   ```
 Där `hausXX` är ssh användarnamnet och `~/Sites/xxx.se` är din lokala Sites mapp med det namn du vill att siten ska få lokalt.
+
+----
+
+### Addera egen kod
+När du ska skapa något eget så gör vi det via ett site specifikt plugin. Addera alla dina funktioner och widgets i denna pluggin.
+- För att skapa ett site specifikt plugin (`webien-site-widgets`), hämta den färdiga plugin mallen.
+```
+wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ~/Sites/xxx.se/wp-content/plugins/
+```
+ 
