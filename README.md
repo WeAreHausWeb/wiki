@@ -1,4 +1,4 @@
-# Synka siter för utveckling
+# Utveckling av siter
 #
 För att börja jobba på en wp site som satts upp m.h.a. [Sitemanager](https://sitemanager.haus.se) behöver du synka ner siten först.
 Eftersom vi inte längre använder något deployscript eller composer så finns här lite bra kommandon för att synka nergrejer från servern.
@@ -44,6 +44,8 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
 När du ska skapa något eget så gör vi det via ett site specifikt plugin. Addera alla dina funktioner och widgets i denna plugin.
 - För att skapa ett site specifikt plugin (`webien-site-widgets`), hämta den färdiga plugin mallen in till ditt lokala projekt.
 ```
-wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/
+wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/ && unzip ./wp-content/plugins/master.zip -d ./wp-content/plugins/ && mv ./wp-content/plugins/webien-site-widgets-master ./wp-content/plugins/webien-site-widgets  && rm ./wp-content/plugins/master.zip
 ```
+- Läs [README.md](https://github.com/WeAreHausWeb/webien-site-widgets/blob/master/README.md) för info kring utveckling samt deploy.
+
  
