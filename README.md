@@ -14,20 +14,28 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
 ### Sätt upp lokal miljö
 > [!NOTE]
 > Nedan refereras `hausXX` som ssh användarnamnet för servern och `~/Sites/xxx.se` är din lokala Sites mapp med det namn du vill att siten ska få lokalt.
+- Skapa din lokala mapp och ställ dig in den.
+ ```
+ mkdir ~/Sites/xxx.se && cd ~/Sites/xxx.se
+  ```
 - Skapa en lokal databas
 - Synka ner alla filer från servern:
   ```
-  rsync -a hausXX@srv01:public_html/ ~/Sites/xxx.se
+  rsync -a hausXX@srv01:public_html/ ./ --exclude={'.well-known','.wp-cli','cgi-bin'}
+  ```
+- Ta bort objekt cache, funkar ej lokalt:
+  ```
+  rm rf ./wp-content/object-cache.php
   ```
 - Ändra till rätt databasuppgifter i `wp-config.php`
 - Hämta databasen från servern samt importera den i ditt projekt:
   ```
-  ssh hausXX@srv01:public_html/ "wp db export db.sql"
-  scp hausXX@srv01:public_html/db.sql ~/Sites/xxx.se
-  ssh hausXX@srv01:public_html/ "rm db.sql"
+  ssh hausXX@srv01 "cd www && wp db export db.sql"
+  scp hausXX@srv01:www/db.sql ./
+  ssh hausXX@srv01 "cd www && rm db.sql"
 
-  cd ~/Sites/xxx.se && wp db import db.sql
-  wp db search-replace "serverUrl.se" "lokalUrl.se"
+  wp db import db.sql
+  wp search-replace "serverUrl.se" "lokalUrl.se"
   ```
 
 ----
@@ -36,6 +44,6 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
 När du ska skapa något eget så gör vi det via ett site specifikt plugin. Addera alla dina funktioner och widgets i denna plugin.
 - För att skapa ett site specifikt plugin (`webien-site-widgets`), hämta den färdiga plugin mallen in till ditt lokala projekt.
 ```
-wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ~/Sites/xxx.se/wp-content/plugins/
+wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/
 ```
  
