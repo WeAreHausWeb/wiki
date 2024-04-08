@@ -23,7 +23,7 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
   ```
   rsync -a hausXX@srv01:public_html/ ./ --exclude={'.well-known','.wp-cli','cgi-bin'}
   ```
-- Ta bort objekt cache, funkar ej lokalt:
+- Ta bort objekt cache, används ej lokalt:
   ```
   rm rf ./wp-content/object-cache.php
   ```
