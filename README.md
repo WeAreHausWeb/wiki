@@ -13,7 +13,7 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
 
 ### Sätt upp lokal miljö
 > [!NOTE]
-> Nedan refereras `hausXX` som ssh användarnamnet för servern och `~/Sites/xxx.se` är din lokala Sites mapp med det namn du vill att siten ska få lokalt.
+> Nedan refereras `hausXX` som ssh användarnamnet för servern och `~/Sites/xxx.se` är din lokala Sites mapp med det namn du vill att siten ska få lokalt. Användarnamnet hittas i [WHM](https://haus-srv01.oderland.com:2087/cpsess4391671936/scripts4/listaccts)
 - Skapa din lokala mapp och ställ dig in den.
  ```
  mkdir ~/Sites/xxx.se && cd ~/Sites/xxx.se
