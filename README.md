@@ -48,6 +48,7 @@ När du ska skapa något eget så gör vi det via ett site specifikt plugin. Add
 ```
 wget https://github.com/WeAreHausWeb/site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/ && unzip ./wp-content/plugins/master.zip -d ./wp-content/plugins/ && mv ./wp-content/plugins/site-widgets-master ./wp-content/plugins/site-widgets  && rm ./wp-content/plugins/master.zip
 ```
+- Sätt upp git i mappen och koppla ihop ditt plugin med det repo som troligtvis finns enligt ovan.
 - Läs [README.md](https://github.com/WeAreHausWeb/site-widgets/blob/master/README.md) för info kring utveckling samt deploy.
 
  
