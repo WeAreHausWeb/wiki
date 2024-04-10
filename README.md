@@ -46,8 +46,8 @@ När du ska skapa något eget så gör vi det via ett site specifikt plugin. Add
   
 - För att hämta ett nytt site specifikt plugin (`site-widgets`), hämta den färdiga plugin mallen in till ditt lokala projekt.
 ```
-wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/ && unzip ./wp-content/plugins/master.zip -d ./wp-content/plugins/ && mv ./wp-content/plugins/site-widgets-master ./wp-content/plugins/site-widgets  && rm ./wp-content/plugins/master.zip
+wget https://github.com/WeAreHausWeb/site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/ && unzip ./wp-content/plugins/master.zip -d ./wp-content/plugins/ && mv ./wp-content/plugins/site-widgets-master ./wp-content/plugins/site-widgets  && rm ./wp-content/plugins/master.zip
 ```
-- Läs [README.md](https://github.com/WeAreHausWeb/webien-site-widgets/blob/master/README.md) för info kring utveckling samt deploy.
+- Läs [README.md](https://github.com/WeAreHausWeb/site-widgets/blob/master/README.md) för info kring utveckling samt deploy.
 
  
