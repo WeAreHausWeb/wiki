@@ -44,9 +44,9 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
 När du ska skapa något eget så gör vi det via ett site specifikt plugin. Addera alla dina funktioner och widgets i denna plugin.
 - De flesta siterna har redan ett github repo, även de som inte har någon custom kod sedan innan. [Identifiera](https://github.com/orgs/WeAreHausWeb/repositories) om det finns ett repo för siten först och använd isof det som repo för din kod.
   
-- För att hämta ett nytt site specifikt plugin (`webien-site-widgets`), hämta den färdiga plugin mallen in till ditt lokala projekt.
+- För att hämta ett nytt site specifikt plugin (`site-widgets`), hämta den färdiga plugin mallen in till ditt lokala projekt.
 ```
-wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/ && unzip ./wp-content/plugins/master.zip -d ./wp-content/plugins/ && mv ./wp-content/plugins/webien-site-widgets-master ./wp-content/plugins/webien-site-widgets  && rm ./wp-content/plugins/master.zip
+wget https://github.com/WeAreHausWeb/webien-site-widgets/archive/refs/heads/master.zip -P ./wp-content/plugins/ && unzip ./wp-content/plugins/master.zip -d ./wp-content/plugins/ && mv ./wp-content/plugins/site-widgets-master ./wp-content/plugins/site-widgets  && rm ./wp-content/plugins/master.zip
 ```
 - Läs [README.md](https://github.com/WeAreHausWeb/webien-site-widgets/blob/master/README.md) för info kring utveckling samt deploy.
 
