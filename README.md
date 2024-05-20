@@ -23,7 +23,7 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
   ```
   rsync -a hausXX@srv01:public_html/ ./ --exclude={'.well-known','.wp-cli','cgi-bin'}
   ```
-- Ta bort objekt cache, används ej lokalt:
+- Ta bort objekt cache om den finns, används ej lokalt:
   ```
   rm rf ./wp-content/object-cache.php
   ```
@@ -38,9 +38,17 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
   wp search-replace "serverUrl.se" "lokalUrl.se"
   ```
 
+- Om det finns ett Site plugin som du ska utveckla i, koppla upp det mot repot.
+  ```
+  rm -rf ./wp-content/plugins/site-widgets
+  git clone git@githubcareofhaus:WeAreHausWeb/xxx.se.git ./wp-content/plugins/site-widgets
+  ```
+  Addera repot till din Sourcetree eller motsvarande.
+  
+
 ----
 
-### Egen kod
+### Skapa en site widget med egen kod
 När du ska skapa något eget så gör vi det via ett site specifikt plugin. Addera alla dina funktioner och widgets i denna plugin.
 - De flesta siterna har redan ett github repo, även de som inte har någon custom kod sedan innan. [Identifiera](https://github.com/orgs/WeAreHausWeb/repositories) om det finns ett repo för siten först och använd isof det som repo för din kod.
   
