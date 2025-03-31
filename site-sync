@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Sätt din lokala sites mapp
+LOCALPATH="$HOME/Sites"
+
 # Ange databasuppgifter för lokal MySQL
 DBUSER="root"
 DBPASS="root" # Ändra till ditt lösenord
@@ -8,10 +11,13 @@ DBHOST="localhost"
 # Fråga användaren om input för variablerna
 read -p "Ange site-URL (exempel.se): " SITEURL
 read -p "Ange server-ID: " SERVER
+read -p "Ange sitens server path relativt från www/: (Tryck bara Enter om siten ligger i www roten, annars ex: site.se/)" SITEPATH
+
+
+
 
 # Skapa lokal mapp och navigera till den
-mkdir -p ~/Sites/"$SITEURL" && cd ~/Sites/"$SITEURL"
-
+mkdir -p "${LOCALPATH}/${SITEURL}" && cd "${LOCALPATH}/${SITEURL}"
 
 # Skapa lokal databas (konvertera punkter till understreck för DB-namn)
 DBNAME=$(echo "${SITEURL}" | tr '.' '_')
@@ -20,11 +26,9 @@ DBNAME=$(echo "${SITEURL}" | tr '.' '_')
 echo "Skapar lokal databas '${DBNAME}'..."
 mysql -u"${DBUSER}" -p"${DBPASS}" -h"${DBHOST}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME} DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null
 
-
 # Synka filer från servern
-echo "Synkar filer.."
-rsync -a "${SERVER}@srv01:public_html/" ./ --exclude={'.well-known','.wp-cli','cgi-bin'}
-
+echo "Synkar filer från: ${SERVER}@srv01:public_html/${SITEPATH}"
+rsync -a "${SERVER}@srv01:public_html/${SITEPATH}" ./ --exclude={'.well-known','.wp-cli','cgi-bin'}
 
 # Uppdatera wp-config.php med lokala DB-uppgifter
 if [ -f wp-config.php ]; then
@@ -35,15 +39,14 @@ else
     echo "wp-config.php saknas. Uppdatera manuellt."
 fi
 
-
 # Ta bort object-cache.php lokalt
 rm -f ./wp-content/object-cache.php
 
 # Exportera databas på servern och ladda ner den
 echo "Synkar ner databas.."
-ssh "${SERVER}@srv01" "cd www && wp db export db.sql"
-scp "${SERVER}@srv01:www/db.sql" ./
-ssh "${SERVER}@srv01" "cd www && rm db.sql"
+ssh "${SERVER}@srv01" "cd www/${SITEPATH} && wp db export db.sql"
+scp "${SERVER}@srv01:www/${SITEPATH}/db.sql" ./
+ssh "${SERVER}@srv01" "cd www/${SITEPATH} && rm db.sql"
 
 # Importera databasen lokalt
 wp db import db.sql 2>/dev/null
