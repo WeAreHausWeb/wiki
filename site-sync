@@ -13,8 +13,10 @@ read -p "Ange site-URL (exempel.se): " SITEURL
 read -p "Ange server-ID: " SERVER
 read -p "Ange sitens server path relativt från www/: (Tryck bara Enter om siten ligger i www roten, annars ex: site.se/)" SITEPATH
 
-
-
+# Säkerställ att SITEPATH slutar med slash (om den inte är tom)
+if [[ -n "$SITEPATH" && "${SITEPATH: -1}" != "/" ]]; then
+    SITEPATH="${SITEPATH}/"
+fi
 
 # Skapa lokal mapp och navigera till den
 mkdir -p "${LOCALPATH}/${SITEURL}" && cd "${LOCALPATH}/${SITEURL}"
