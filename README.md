@@ -15,6 +15,9 @@ Eftersom vi inte längre använder något deployscript eller composer så finns 
 > [!TIP]
 > Ladda ner [nerladdningsscriptet](https://github.com/WeAreHausWeb/wiki/blob/main/site-sync) för att snabbt köra alla steg nedan. Annars kan du göra stegen manuellt nedan.
 
+> [!TIP]
+> Ska du bara uppdatera din befintliga lokala miljö, använd [uppdateringsscriptet](https://github.com/WeAreHausWeb/wiki/blob/main/site-sync-update-only). 
+
 > [!NOTE]
 > Nedan refereras `hausXX` som ssh användarnamnet för servern och `~/Sites/xxx.se` är din lokala Sites mapp med det namn du vill att siten ska få lokalt. Användarnamnet hittas i **WHM**
 - Skapa din lokala mapp och ställ dig in den.
