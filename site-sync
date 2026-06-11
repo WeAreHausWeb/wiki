@@ -1,220 +1,103 @@
-<?php
-/**
- * Standalone diagnostic for the OpeningHours Google sync (vafabmiljo.se).
- *
- * HOW TO USE
- *   1. Upload this file to the WordPress root:
- *        /home/haus94/www/vafabmiljo.se/debug-sync.php
- *      (same folder as wp-load.php)
- *   2. Run it ONE of these ways:
- *        - Browser: visit https://vafabmiljo.se/debug-sync.php while logged in as admin
- *        - WP-CLI:  cd to the root, then `wp eval-file debug-sync.php`
- *   3. Copy the full output and DELETE THIS FILE. It prints partial token info
- *      and must not stay publicly reachable.
- *
- * It is READ-ONLY. It never writes to the database, options, or the token file.
- * The one exception: with ?refresh=1 it will TEST a token refresh, but even then
- * it does not save the new token — it only reports whether the refresh worked.
- */
+#!/bin/bash
+# Sätt din lokala sites mapp
+LOCALPATH="$HOME/Sites"
+# Ange databasuppgifter för lokal MySQL
+DBUSER="haus"
+DBPASS="life"
+DBHOST="localhost"
 
-require_once __DIR__ . '/wp-load.php';
+# Fråga efter server-ID
+read -p "Ange server-ID: " SERVER
 
-if (!current_user_can('manage_options') && php_sapi_name() !== 'cli') {
-    die('Not allowed.');
-}
+# Hämta lista på siter från servern
+echo "Söker WordPress-siter på ${SERVER}@srv01..."
+SITES=$(ssh "${SERVER}@srv01" "ls -d public_html/*/wp-config.php public_html/wp-config.php 2>/dev/null | sed 's|public_html/||;s|/wp-config.php||;s|wp-config.php|.|'")
 
-header('Content-Type: text/plain; charset=utf-8');
+SITE_ARRAY=()
+if [[ -n "$SITES" ]]; then
+    echo ""
+    echo "WordPress-siter på servern:"
+    echo "----------------------------"
+    i=1
+    while IFS= read -r site; do
+        if [[ "$site" == "." ]]; then
+            echo "  ${i}) (root) public_html/"
+        else
+            echo "  ${i}) ${site}"
+        fi
+        SITE_ARRAY+=("$site")
+        ((i++))
+    done <<< "$SITES"
+    echo "  0) Ange manuellt"
+    echo ""
+    read -p "Välj site (nummer): " SITE_CHOICE
+else
+    echo "Inga WordPress-siter hittades."
+    SITE_CHOICE=0
+fi
 
-// Allow a refresh test via ?refresh=1 (browser) or --refresh (cli)
-$doRefresh = (isset($_GET['refresh']) && $_GET['refresh']) || in_array('--refresh', $argv ?? [], true);
+if [[ "$SITE_CHOICE" == "0" ]]; then
+    read -p "Ange site-URL (exempel.se): " SITEURL
+    SITEPATH=""
+else
+    SELECTED="${SITE_ARRAY[$((SITE_CHOICE-1))]}"
+    if [[ "$SELECTED" == "." ]]; then
+        read -p "Ange site-URL (exempel.se): " SITEURL
+        SITEPATH=""
+    else
+        SITEURL="$SELECTED"
+        SITEPATH="${SELECTED}/"
+    fi
+    echo "Vald site: ${SITEURL}"
+fi
 
-$class = '\\Webien\\Site\\Widgets\\OpeningHours\\SyncHours';
+read -p "Vill du exkludera uploads? (j/n): " SKIP_UPLOADS
 
-if (!class_exists($class)) {
-    die("Could not find class $class.\n"
-      . "The plugin may not be loaded, or the namespace differs.\n"
-      . "Make sure this runs in normal WordPress context (it does, via wp-load.php).\n");
-}
-
-$sync = new $class();
-
-// Read the real values straight from the live class instance.
-$token_path_raw = $sync->access_token_path;
-$account_id     = $sync->account_id;
-
-// The original code's path is malformed (e.g. ".../wp-content../../file.txt").
-// realpath() shows where it actually resolves on disk (false if nothing's there).
-$token_path_real = @realpath($token_path_raw);
-
-echo "=== 0. Config read from SyncHours class ===\n";
-echo "Class:           $class\n";
-echo "Token path (raw): $token_path_raw\n";
-echo "Token path (resolved on disk): " . ($token_path_real ?: '(does not resolve to an existing file)') . "\n";
-echo "Account ID:      $account_id\n";
-echo "WP_CONTENT_DIR:  " . WP_CONTENT_DIR . "\n";
-
-echo "\n=== 1. Token file ===\n";
-$readablePath = $token_path_real ?: $token_path_raw;
-echo "Checking: $readablePath\n";
-echo "Exists:   " . (file_exists($readablePath) ? 'yes' : 'NO') . "\n";
-echo "Readable: " . (is_readable($readablePath) ? 'yes' : 'NO') . "\n";
-
-if (!is_readable($readablePath)) {
-    echo "\n>>> Cannot read the token file. This is very likely the problem.\n";
-    echo ">>> Either the path is wrong/malformed, the file was lost in a migration,\n";
-    echo ">>> or permissions changed. Fix this before anything else.\n";
-    echo "\n=== Done. Delete this file now. ===\n";
-    die();
-}
-
-$tok = trim(file_get_contents($readablePath));
-echo "Length:   " . strlen($tok) . " chars\n";
-echo "Preview:  " . substr($tok, 0, 12) . "...\n";
-if ($tok === '') {
-    echo "\n>>> Token file is EMPTY. A failed refresh likely overwrote it with nothing.\n";
-    echo ">>> You'll need to regenerate the token via the OAuth playground.\n";
-}
-
-echo "\n=== 2. Live API call (openInfo included in readMask) ===\n";
-$readMask = 'title,storefrontAddress,regularHours,specialHours,openInfo,metadata';
-$url = 'https://mybusinessbusinessinformation.googleapis.com/v1/accounts/'
-     . $account_id . '/locations/?readMask=' . $readMask . '&pageSize=100';
-
-$ch = curl_init();
-curl_setopt_array($ch, [
-    CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $tok],
-    CURLOPT_URL            => $url,
-    CURLOPT_RETURNTRANSFER => 1,
-]);
-$raw      = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlErr  = curl_error($ch);
-curl_close($ch);
-
-echo "HTTP status: $httpCode\n";
-if ($curlErr) {
-    echo "cURL error:  $curlErr\n";
-    echo "\n>>> A cURL/transport error (often TLS or CA-bundle related after a PHP upgrade)\n";
-    echo ">>> means the request never reached Google. That alone breaks sync.\n";
-}
-
-$resp = json_decode($raw);
-
-if (isset($resp->error)) {
-    echo "\nAPI ERROR:\n";
-    echo "  code:    " . ($resp->error->code ?? '?') . "\n";
-    echo "  status:  " . ($resp->error->status ?? '?') . "\n";
-    echo "  message: " . ($resp->error->message ?? '?') . "\n";
-
-    if (($resp->error->code ?? null) == 401) {
-        echo "\n>>> 401 = the access token is expired/invalid.\n";
-        if ($doRefresh) {
-            echo ">>> Running a refresh TEST (the new token is NOT saved)...\n";
-            $newTok = test_refresh($sync);
-            if ($newTok) {
-                echo ">>> Refresh SUCCEEDED. The refresh token is still valid.\n";
-                echo ">>> So the live failure is likely the PHP 8 fatal in the old code,\n";
-                echo ">>> or the new token was never written back. The fixed SyncHours.php solves this.\n";
-            } else {
-                echo ">>> Refresh FAILED. The refresh token is dead/revoked.\n";
-                echo ">>> Regenerate it via the Google OAuth playground (scope business.manage).\n";
-            }
-        } else {
-            echo ">>> Re-run with ?refresh=1 (browser) or --refresh (cli) to TEST whether\n";
-            echo ">>> the refresh token can still get a new access token.\n";
-        }
-    }
-    echo "\n=== Done. Delete this file now. ===\n";
-    die();
-}
-
-echo "\n=== 3. Locations + open status + WP post match ===\n";
-$locations = $resp->locations ?? [];
-echo "Total locations returned: " . count($locations) . "\n\n";
-
-$bAckbyFound = false;
-foreach ($locations as $loc) {
-    $title  = $loc->title ?? '(no title)';
-    $status = $loc->openInfo->status ?? '(no openInfo field returned)';
-    $place  = $loc->metadata->placeId ?? '(no placeId)';
-
-    echo "- $title\n";
-    echo "    status:  $status\n";
-    echo "    placeId: $place\n";
-
-    if ($place && $place !== '(no placeId)') {
-        $matched = get_posts([
-            'post_type'   => ['facilities', 'facilities_company'],
-            'numberposts' => -1,
-            'post_status' => ['publish', 'draft'],
-            'fields'      => 'ids',
-            'meta_key'    => 'google_places_id',
-            'meta_value'  => $place,
-        ]);
-        echo "    matched WP posts: " . (empty($matched) ? 'NONE (placeId not stored on any post)' : implode(',', $matched)) . "\n";
-    }
-
-    if (stripos($title, 'Bäckby') !== false || stripos($title, 'Backby') !== false) {
-        $bAckbyFound = true;
-    }
-    echo "\n";
-}
-
-if (!$bAckbyFound) {
-    echo ">>> Note: no location with 'Bäckby' in the title was returned by the API.\n";
-    echo ">>> If you expected it, the API account may not include that location,\n";
-    echo ">>> or pagination/pageSize is hiding it.\n\n";
-}
-
-echo "=== 4. Tail of plugin log (wp-content/log.txt) ===\n";
-$logPath = WP_CONTENT_DIR . '/log.txt';
-if (is_readable($logPath)) {
-    $lines = file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $tail  = array_slice($lines, -15);
-    echo "Last " . count($tail) . " line(s):\n";
-    foreach ($tail as $l) echo "  $l\n";
-} else {
-    echo "(no readable log.txt yet at $logPath)\n";
-}
-
-echo "\n=== Done. Delete this file now. ===\n";
-
-
-/**
- * Tests a token refresh WITHOUT saving the result.
- * Reads client_id / client_secret / refresh_token off the live class.
- */
-function test_refresh($sync)
-{
-    $post = [
-        'refresh_token' => $sync->refresh_token,
-        'client_id'     => $sync->client_id,
-        'client_secret' => $sync->client_secret,
-        'grant_type'    => 'refresh_token',
-    ];
-
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL            => 'https://www.googleapis.com/oauth2/v4/token',
-        CURLOPT_RETURNTRANSFER => 1,
-        CURLOPT_POST           => 1,
-        CURLOPT_POSTFIELDS     => $post,
-    ]);
-    $raw     = curl_exec($ch);
-    $curlErr = curl_error($ch);
-    curl_close($ch);
-
-    if ($raw === false) {
-        echo "    (refresh cURL error: $curlErr)\n";
-        return null;
-    }
-
-    $r = json_decode($raw);
-    if (!isset($r->access_token)) {
-        $detail = $r->error_description ?? ($r->error ?? 'no access_token in response');
-        if (is_object($detail) || is_array($detail)) $detail = json_encode($detail);
-        echo "    (refresh response: $detail)\n";
-        return null;
-    }
-    return $r->access_token;
-}
+# Skapa lokal mapp och navigera till den
+mkdir -p "${LOCALPATH}/${SITEURL}" && cd "${LOCALPATH}/${SITEURL}"
+# Skapa lokal databas (konvertera punkter till understreck för DB-namn)
+DBNAME=$(echo "${SITEURL}" | tr '.' '_')
+# Skapa databasen lokalt
+echo "Skapar lokal databas '${DBNAME}'..."
+mysql -u"${DBUSER}" -p"${DBPASS}" -h"${DBHOST}" -e "CREATE DATABASE IF NOT EXISTS ${DBNAME} DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null
+# Bygg rsync excludes
+RSYNC_EXCLUDES=(--exclude='.well-known' --exclude='.wp-cli' --exclude='cgi-bin')
+if [[ "$SKIP_UPLOADS" == "j" ]]; then
+    RSYNC_EXCLUDES+=(--exclude='wp-content/uploads')
+    echo "Hoppar över uploads..."
+fi
+# Synka filer från servern
+echo "Synkar filer från: ${SERVER}@srv01:public_html/${SITEPATH}"
+rsync -a "${SERVER}@srv01:public_html/${SITEPATH}" ./ "${RSYNC_EXCLUDES[@]}"
+# Uppdatera wp-config.php med lokala DB-uppgifter
+if [ -f wp-config.php ]; then
+    sed -i.bak "s/define( *'DB_NAME'.*/define( 'DB_NAME', '${DBNAME}' );/" wp-config.php
+    sed -i "" "s/define( *'DB_USER'.*/define( 'DB_USER', '${DBUSER}' );/" wp-config.php
+    sed -i "" "s/define( *'DB_PASSWORD'.*/define( 'DB_PASSWORD', '${DBPASS}' );/" wp-config.php
+else
+    echo "wp-config.php saknas. Uppdatera manuellt."
+fi
+# Ta bort object-cache.php lokalt
+rm -f ./wp-content/object-cache.php
+# Exportera databas på servern och ladda ner den
+echo "Synkar ner databas.."
+ssh "${SERVER}@srv01" "cd www/${SITEPATH} && wp db export db.sql"
+scp "${SERVER}@srv01:www/${SITEPATH}/db.sql" ./
+ssh "${SERVER}@srv01" "cd www/${SITEPATH} && rm db.sql"
+# Importera databasen lokalt
+wp db import db.sql 2>/dev/null
+# Ersätt URL i databasen
+OLD_SITEURL=$(wp option get siteurl)
+NEW_SITEURL="http://${SITEURL}.test"
+echo "Ersätter ${OLD_SITEURL} med ${NEW_SITEURL} i databasen..."
+wp search-replace "${OLD_SITEURL}" "${NEW_SITEURL}" --skip-columns=guid --quiet
+# Cleanup
+wp rewrite flush
+wp cache flush
+wp elementor flush-css --regenerate
+#rm db.sql
+wp plugin deactivate litespeed-cache
+wp plugin deactivate wp-2fa
+echo "Fixar Valet.."
+#valet isolate php@83
+echo "Färdigt -> ${NEW_SITEURL}"
