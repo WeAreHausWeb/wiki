@@ -98,6 +98,4 @@ wp elementor flush-css --regenerate
 #rm db.sql
 wp plugin deactivate litespeed-cache
 wp plugin deactivate wp-2fa
-echo "Fixar Valet.."
-#valet isolate php@83
 echo "Färdigt -> ${NEW_SITEURL}"
